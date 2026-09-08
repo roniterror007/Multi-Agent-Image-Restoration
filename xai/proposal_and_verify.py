@@ -235,8 +235,10 @@ class SharedQualityGate:
             corrected_fg_l = corrected_lab[:, :, 0][fg_mask].mean()
             original_fg_l = original_lab[:, :, 0][fg_mask].mean()
 
-            # Target: mean L around 130-160 for well-exposed industrial parts
-            target_l = 145.0
+            # Dynamic Target Luma to avoid hardcoded heuristic bottleneck
+            original_median_l = np.median(original_lab[:, :, 0][fg_mask])
+            target_l = max(100.0, min(180.0, float(original_median_l) + 20.0))
+            
             original_l_error = abs(original_fg_l - target_l)
             corrected_l_error = abs(corrected_fg_l - target_l)
 

@@ -121,7 +121,7 @@ class VLMReasoner:
         confidence = 0.70
         
         if report.has_exposure_issue:
-            target_l = 150.0
+            target_l = max(100.0, min(180.0, mean_l + 20.0))
             dl = int((target_l - mean_l) * 0.75)
             reasons.append(f"Expert System: Exposure fix (L shift {dl}).")
             confidence += 0.10

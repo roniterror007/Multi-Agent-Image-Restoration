@@ -233,11 +233,16 @@ def main():
 
         img_lab = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2LAB).astype(np.float32)
 
-        # Skip correction for clean images (just segment + format)
-        if not report.is_degraded:
-            print("[Pipeline] Image classified as CLEAN. Skipping color correction.")
-            corrected_pil = img_pil
-            final_bgr = img_bgr
+        # Early-Exit Fast Track for clean images
+        if not report.is_degraded and report.severity < 0.2:
+            print("[Pipeline] Image classified as CLEAN (Fast Track). Bypassing heavy networks.")
+            out_path = out_dir / img_path.name
+            cv2.imwrite(str(out_path), img_bgr)
+            processed_count += 1
+            if args.limit > 0 and processed_count >= args.limit:
+                break
+            continue
+            
         else:
             # ================================================================
             # PHASE 1: AGENT DEBATE & PROPOSALS
@@ -264,6 +269,18 @@ def main():
                 if ref_name and ref_sim > 0.70:
                     ref_lab = dino_index.ref_images[ref_name]
                     print(f"[DINOv2 Index] Best structural match: {ref_name} (similarity: {ref_sim:.3f})")
+
+                    # DINOv2 Color Sanity Gate to prevent color-invariant structural trap
+                    ref_mean_a = ref_lab[:, :, 1].mean()
+                    ref_mean_b = ref_lab[:, :, 2].mean()
+                    img_mean_a = img_lab[:, :, 1].mean()
+                    img_mean_b = img_lab[:, :, 2].mean()
+
+                    if (abs(ref_mean_a - 128.0) > 15.0 or abs(ref_mean_b - 128.0) > 15.0):
+                        # Divergent cast check
+                        if np.sign(ref_mean_a - 128.0) != np.sign(img_mean_a - 128.0) or np.sign(ref_mean_b - 128.0) != np.sign(img_mean_b - 128.0):
+                            print(f"[DINOv2 Sanity Gate] Match rejected! Reference {ref_name} has a divergent extreme color cast. Falling back to generic agents.")
+                            ref_sim = 0.0  # Bypass exemplar matching
 
                     # ---- HIGH CONFIDENCE: Direct Structural Replacement ----
                     if ref_sim > 0.90:

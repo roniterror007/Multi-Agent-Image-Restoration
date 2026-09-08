@@ -73,7 +73,15 @@ class ProportionalController:
         target_lab = self.current_lab.copy()
 
         if region is None:
-            target_lab[:, :, 0] += l_shift
+            # Luminance-Aware Masking to prevent blowing out highlights/shadows
+            if l_shift != 0:
+                current_l = self.current_lab[:, :, 0]
+                if l_shift > 0:
+                    l_mask = np.clip((255.0 - current_l) / 50.0, 0.0, 1.0)
+                else:
+                    l_mask = np.clip(current_l / 50.0, 0.0, 1.0)
+                target_lab[:, :, 0] += l_shift * l_mask
+            
             target_lab[:, :, 1] += a_shift
             target_lab[:, :, 2] += b_shift
         else:
