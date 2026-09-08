@@ -1,0 +1,55 @@
+# -----------------------------------------------------------------------------
+# Antigravity Vision - Complete Command Cheat Sheet
+# -----------------------------------------------------------------------------
+# This file contains all the necessary commands to set up, run, and test the 
+# Agent-Critic Autonomous Vision Pipeline on any system.
+# -----------------------------------------------------------------------------
+
+# 1. Environment Setup
+# Create a fresh virtual environment (Windows)
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# (Alternative for Linux/Mac)
+# python3 -m venv .venv
+# source .venv/bin/activate
+
+# Install the exact required dependencies
+pip install -r requirements.txt
+
+
+# -----------------------------------------------------------------------------
+# 2. Running the Autonomous Pipeline
+# -----------------------------------------------------------------------------
+# Run the pipeline with default settings:
+# (Reads from ./images/ and outputs to ./abb_output_full/)
+python run_pipeline.py
+
+# Run the pipeline with a specific limit (e.g. 5 images) for quick testing:
+python run_pipeline.py --limit 5
+
+# Run the pipeline on a custom folder of corrupted images:
+python run_pipeline.py --input-dir my_corrupted_images --output-dir my_fixed_images
+
+
+# -----------------------------------------------------------------------------
+# 3. Interactive Manual Review (Human-in-the-loop)
+# -----------------------------------------------------------------------------
+# Launch the PyQt5 UI to review processed images and provide feedback:
+# (Reads automatically from the pipeline's default output folders)
+python run_review.py
+
+# UI Hotkeys:
+# T : Toggle between Dark Mode (qdarkstyle) and Light Mode.
+# Esc : Close the UI and halt the review queue.
+
+
+# -----------------------------------------------------------------------------
+# 4. Automated Testing (Quality Assurance)
+# -----------------------------------------------------------------------------
+# Run the complete PyTest suite to verify that the Critic Gate correctly
+# mathematically rejects hallucinated/OOD model proposals:
+python -m pytest tests/test_critic_gate.py
+
+# Run PyTest with verbose output to see exactly which logic gates passed:
+python -m pytest tests/test_critic_gate.py -v
